@@ -4,45 +4,59 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <utility>
 
 namespace Year2025 {
 
-std::string Day2::handlePart1Impl(const std::string& input) {
-    std::ifstream file("input/2025/day2.txt");
+// Parse ranges from input file
+std::vector<std::string> parseRangesFromFile(const std::string& filepath) {
+    std::ifstream file(filepath);
     std::string line;
     std::vector<std::string> ranges;
 
-    // End product
-    long long product_of_invalids = 0;
-
-    // Extract ranges
     while (std::getline(file, line)) {
         char delimiter = ','; 
-
-        std::stringstream ss(line);
+        std::stringstream stream(line);
         std::string range;
 
-        while (std::getline(ss, range, delimiter)) {
+        while (std::getline(stream, range, delimiter)) {
             ranges.push_back(range);
         }
     }
 
-    // Break up the ranges into start end value pairs
+    return ranges;
+}
+
+// Get start and end values from a range string
+std::pair<long long, long long> getRangeValues(const std::string& range) {
+    char delimiter = '-';
+    std::stringstream stream(range);
+    std::string value;
+    std::vector<long long> values;
+
+    while (std::getline(stream, value, delimiter)) {
+        values.push_back(std::stoll(value));
+    }
+
+    return {values[0], values[1]};
+}
+
+std::string Day2::handlePart1Impl(const std::string& input) {
+    // Extract ranges from file
+    std::vector<std::string> ranges = parseRangesFromFile("input/2025/day2.txt");
+
+    // End product
+    long long product_of_invalids = 0;
+
+    // Process each range
     for(const std::string& range : ranges) {
-        char delimiter = '-';
-        
-        std::stringstream ss(range);
-        std::string value;
+        auto [start, end] = getRangeValues(range);
 
-        std::vector<long long> values;
-
-        while (std::getline(ss, value, delimiter)) {
-            values.push_back(std::stoll(value));
-        }
-
-        // Iterate every value in between,
-        for(long long i = values[0] ; i <= values[1] ; i++) {
+        // Iterate every value in between
+        for(long long i = start; i <= end; i++) {
             std::string value_string = std::to_string(i);
+
             // Only care about even digit numbers?
             if(value_string.size() % 2 == 0) {
                 int half = value_string.size() / 2;
@@ -59,49 +73,29 @@ std::string Day2::handlePart1Impl(const std::string& input) {
 }
 
 std::string Day2::handlePart2Impl(const std::string& input) {
-    std::ifstream file("input/2025/day2.txt");
-    std::string line;
-    std::vector<std::string> ranges;
+    // Extract ranges from file
+    std::vector<std::string> ranges = parseRangesFromFile("input/2025/day2.txt");
 
     // End product
     long long product_of_invalids = 0;
 
-    // Extract ranges
-    while (std::getline(file, line)) {
-        char delimiter = ','; 
-
-        std::stringstream ss(line);
-        std::string range;
-
-        while (std::getline(ss, range, delimiter)) {
-            ranges.push_back(range);
-        }
-    }
-
-    // Break up the ranges into start end value pairs
+    // Process each range
     for(const std::string& range : ranges) {
-        char delimiter = '-';
-        
-        std::stringstream ss(range);
-        std::string value;
+        auto [start, end] = getRangeValues(range);
 
-        std::vector<long long> values;
-
-        while (std::getline(ss, value, delimiter)) {
-            values.push_back(std::stoll(value));
-        }
-
-        // Iterate every value in between,
-        for(long long i = values[0] ; i <= values[1] ; i++) {
+        // Iterate every value in between
+        for(long long i = start; i <= end; i++) {
             std::string value_string = std::to_string(i);
             
             // Find the halfway point
             int half = value_string.size() / 2;
             for (int j = 1 ; j <= half ; j++) {
+
                 // Make sure we can fit in the pattern
                 if(value_string.size() % j == 0) {
                     std::string needle = value_string.substr(0, j);
                     std::string proposed_pattern;
+                    
                     // Build the predicted pattern based on the needle and total size of the string
                     for(int k = 0 ; k < value_string.size() / j; k++) {
                         proposed_pattern += needle;

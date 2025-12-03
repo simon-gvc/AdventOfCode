@@ -9,56 +9,18 @@
 
 namespace Year2025 {
 
-std::string Day3::handlePart1Impl(const std::string& input) {
-    
-    std::ifstream file("input/2025/day3.txt");
-    std::string line;
-
-    int total_joltage = 0;
-
-    while (std::getline(file, line)) {
-        int left_index = 0;
-        int left_value = 0;
-        int right_value = 0;
-
-        // Find the highest possible left value and index
-        for (int i = 0; i < line.size() - 1; i++) {
-            
-            // Get the int equivalent now since c++ doesnt make life easy
-            int value = line[i] - '0';
-            if(value > left_value) {
-                left_value = value;
-                left_index = i;
-            }
-        }
-        // Now, reverse the order and find the right value
-        for (int i = line.size() ; i > left_index ; i--) {
-
-            int value = line[i] - '0';
-            if(value > right_value) {
-                right_value = value;
-            }
-        }
-
-        total_joltage += std::stoi(std::to_string(left_value) + std::to_string(right_value));
-    }
-    return "Total Joltage : " + std::to_string(total_joltage);
-}
-
-std::string Day3::handlePart2Impl(const std::string& input) {
-   
+long long calculateJoltage(int MAX_SIZE) {
     std::ifstream file("input/2025/day3.txt");
     std::string line;
 
     long long total_joltage = 0;
-    int MAX_SIZE = 12;
 
     while (std::getline(file, line)) {
 
         // Keep track of the index while we loop through it,
         int start_point = 0;
 
-        while(line.size() > 12 && start_point < line.size()) {
+        while(line.size() > MAX_SIZE && start_point < line.size()) {
 
             // Ensure starting position and gap size,
             int current_index = start_point;
@@ -90,6 +52,16 @@ std::string Day3::handlePart2Impl(const std::string& input) {
 
         total_joltage += std::stoll(line);
     }
+    return total_joltage;
+}
+
+std::string Day3::handlePart1Impl(const std::string& input) {
+    long long total_joltage = calculateJoltage(2);
+    return "Total Joltage : " + std::to_string(total_joltage);
+}
+
+std::string Day3::handlePart2Impl(const std::string& input) {
+    long long total_joltage = calculateJoltage(12);
     return "Total Joltage " + std::to_string(total_joltage);
 }
 

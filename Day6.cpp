@@ -10,27 +10,6 @@
 
 namespace Year2025 {
 
-// Get start and end values from a range string
-std::vector<std::vector<std::string>> makeGrid() {
-    std::vector<std::vector<std::string>> grid;
-    std::ifstream file("input/2025/day6.txt");
-    std::string line;
-
-    while (std::getline(file, line)) {
-        char delimiter = ' ';
-        std::stringstream stream(line);
-        std::vector<std::string> row;
-        std::string value;
-        while (std::getline(stream, value, delimiter)){
-            // Only leave characters in our return value
-            if (value.empty()) continue;
-            row.push_back(value);
-        }
-        grid.push_back(row);
-    }
-    return grid;
-}
-
 std::vector<int> getChunkIndexes(std::vector<std::string> grid) {
     std::vector<int> indexes;
     int row_count = grid.size();
@@ -49,10 +28,21 @@ std::vector<int> getChunkIndexes(std::vector<std::string> grid) {
             indexes.push_back(i);
         }
     }
+    // Add in a final one to to ensure we later catch all chunks
+    indexes.push_back(grid[0].size());
     return indexes;
 }
 
-std::vector<std::vector<std::string>> gridToChuncks(std::vector<std::string> grid) {
+std::vector<std::vector<std::string>> fileToChunks() {
+    std::ifstream file("input/2025/day6.txt");
+    std::string line;
+
+    // Transrom to a grid of strings
+    std::vector<std::string> grid;
+    while(std::getline(file, line)) {
+        grid.push_back(line);
+    }
+
     std::vector<int> indexes = getChunkIndexes(grid);
     std::vector<std::vector<std::string>> chunks;
 
@@ -70,37 +60,11 @@ std::vector<std::vector<std::string>> gridToChuncks(std::vector<std::string> gri
         chunks.push_back(chunk);
     }
 
-    // REFACTOR THIS, DONT FORGET LAST ONE
-    std::vector<std::string> chunk;
-    for(int i = 0; i < grid.size() ; i++) {
-        std::string row;
-        for(int j = start ; j < grid[0].size() ; j++) {
-            row.push_back(grid[i][j]);
-        }
-        chunk.push_back(row);
-    }
-    chunks.push_back(chunk);
     return chunks;
 }
 
-long long processChunk(std::vector<std::string> chunk) {
-    int row_count = chunk.size();
-    int col_count = chunk[0].size();
-
-    std::vector<long long> values;
-
-    for(int i = 0 ; i < col_count ; i++) {
-        std::string value_string;
-        for(int j = 0 ; j < row_count - 1 ; j++) {
-            if(chunk[j][i] != ' ') {
-                value_string.push_back(chunk[j][i]);
-            }
-        }
-        values.push_back(std::stoll(value_string));
-    }
-
+long long computeChunk(std::vector<long long> values, char operation) {
     long long result = 0;
-    char operation = chunk[chunk.size()-1][0];
     if(operation == '*') {
         // Multiplication with 0 would not be very usefull.
         result = 1;
@@ -116,60 +80,63 @@ long long processChunk(std::vector<std::string> chunk) {
     return result;
 }
 
-std::string Day6::handlePart1Impl() {
-    // Get our variables to start
-    std::vector<std::vector<std::string>> grid = makeGrid();
-    int row_count = grid.size();
-    int col_count = grid[0].size();
-    long long grand_total;
+long long processChunk(std::vector<std::string> chunk, char operation, bool angle) {
+    int row_count = chunk.size();
+    int col_count = chunk[0].size();
 
-    // Change the approach and go for columns first
-    for(int i = 0; i < col_count ; i++) {
-        std::vector<long long> values;
-        long long result = 0;
-        
-        // Get all values from the column, skip the operation value
-        for(int j = 0 ; j < row_count - 1 ; j++) {
-            values.push_back(std::stoll(grid[j][i]));
-        }
+    std::vector<long long> values;
 
-        // Get the operation and execute the calculation on the values
-        std::string operation = grid[row_count-1][i];
-        if(operation[0] == '*') {
-            // Multiplication with 0 would not be very usefull.
-            result = 1;
-            for(long long value : values) {
-                result *= value;
+    // Still not great but better i guess
+    if(angle) {
+        for(int i = 0 ; i < col_count ; i++) {
+            std::string value_string;
+            for(int j = 0 ; j < row_count ; j++) {
+                if(chunk[j][i] != ' ') {
+                    value_string.push_back(chunk[j][i]);
+                }
             }
-        } else if (operation[0] == '+') {
-            for(long long value : values) {
-                result += value;
-            }
+            values.push_back(std::stoll(value_string));
         }
-        // Add to grand total
-        grand_total += result;
+    } else {
+        for(int i = 0 ; i < row_count ; i++) {
+            std::string value_string;
+            for(int j = 0 ; j < col_count ; j++) {
+                if(chunk[i][j] != ' ') {
+                    value_string.push_back(chunk[i][j]);
+                }
+            }
+            values.push_back(std::stoll(value_string));
+        }
     }
-
-    return "Grand total : " + std::to_string(grand_total);
+    return computeChunk(values, operation);
 }
 
-std::string Day6::handlePart2Impl() {    
-    std::ifstream file("input/2025/day6.txt");
-    std::string line;
 
-    // Transrom to a grid of strings
-    std::vector<std::string> grid;
-    while(std::getline(file, line)) {
-        grid.push_back(line);
-    }
-
+std::string Day6::handlePart1Impl() {
     // Chop up the grid in chunks, based on empty columns,
-    std::vector<std::vector<std::string>> chunks = gridToChuncks(grid);
+    std::vector<std::vector<std::string>> chunks = fileToChunks();
     
     // Process all chunks, and get a grand total
     long long grand_total = 0;
     for(std::vector<std::string> chunk : chunks) {
-        long long result = processChunk(chunk);
+        char operation = chunk[chunk.size()-1][0];
+        chunk.pop_back();
+        long long result = processChunk(chunk, operation, false);
+        grand_total += result;
+    }
+    return "Grand total : " + std::to_string(grand_total);
+}
+
+std::string Day6::handlePart2Impl() {    
+    // Chop up the grid in chunks, based on empty columns,
+    std::vector<std::vector<std::string>> chunks = fileToChunks();
+    
+    // Process all chunks, and get a grand total
+    long long grand_total = 0;
+    for(std::vector<std::string> chunk : chunks) {
+        char operation = chunk[chunk.size()-1][0];
+        chunk.pop_back();
+        long long result = processChunk(chunk, operation, true);
         grand_total += result;
     }
     return "Grand total : " + std::to_string(grand_total);
